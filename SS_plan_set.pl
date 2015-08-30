@@ -225,33 +225,32 @@ sub make_plan
 sub cprint
 	{
 		my ( $msg, $color, $bold, $newline ) = @_;
-		my $newmsg;
-			
+				
 			given ($newline)
 				{
 					when (0)
 						{
-							$newmsg = $msg . " "; #No new line but space in between. Can print on same line
+							$msg = $msg . " "; #No new line but space in between. Can print on same line
 						}
 						
 					when (1)
 						{
-							$newmsg = $msg . "\n"; #Next text printed on a new line
+							$msg = $msg . "\n"; #Next text printed on a new line
 						}
 						
 					when (2)
 						{
-							$newmsg = $msg . "\n\n"; #Add empty line between text
+							$msg = $msg . "\n\n"; #Add empty line between text
 						}
 				}
 			
 			if ( $bold )
 				{
-					print BOLD, $color, $newmsg, RESET;
+					print BOLD, $color, $msg, RESET;
 				}
 			else
 				{
-					print $color, $newmsg, RESET;
+					print $color, $msg, RESET;
 				}
 	}
 	
