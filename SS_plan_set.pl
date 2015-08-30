@@ -58,7 +58,7 @@ GetOptions(
 	);
 
 #-------------------copied this code from ss_lab.pl-----------------------------------
-#will make a sub for this when I can!
+#will make a sub for this when I can and module TLE::logon()!
 
 usage() if $opts{help};
 usage() if !exists $opts{planet};
@@ -155,6 +155,7 @@ exit;
 #------------ Subs ------------------------------------------------------
 #------------ Gets build times for each SS plan level -------------------
 #------------ Used some code from SS_lab.pl -----------------------------
+#probably a better way to do this will have to find out!
 
 sub get_build_times
 	{
@@ -166,7 +167,7 @@ sub get_build_times
 			for my $type ( @$costs ) 
 				{
 					$type->{time} = ptime( $type->{time} );
-					$timestats[$loop] = $type->{time}; #the magic code as I don't know how this works?			
+					$timestats[$loop] = $type->{time}; #the magic code as I don't know how this works, but it does.			
 					$loop++;
 				}
 		
@@ -175,13 +176,22 @@ sub get_build_times
 #------------ make_plan ---------------------------------------------------
 #------------ makes a plan and returns the wait time for the plan ---------
 #------------ if subsidized returns 0 wait time. --------------------------
+#------------ exits if plan is already being made -------------------------
 
 sub make_plan 
 	{
     my ( $plantype, $level ) = @_;		
 		
-		my $status = $sslab->make_plan( $plantype, $level );
+		my $status = $sslab->view->{make_plan};
+			
+			if ( my $making = $status->{making} ) 
+			{
+        cprint( "Already making SS Lab plan type $making. Please wait for plan to finish building!", $YEL, 1, 2 );
+				exit;
+			}
 		
+		$status = $sslab->make_plan( $plantype, $level );
+				
 		cprint( "Making: Level " . $level . " "  . ProperName( $plantype ) . " on ". $opts{planet} , $MAG, 1, 1 );
 		
 			if( exists $opts{subsidize} )
@@ -200,9 +210,9 @@ sub make_plan
 	}
 
 #------------ Prints Color --------------------------------------------
-#------------ added win32 support -------------------------------------
+#------------ took out win32 only -------------------------------------
 #------------ should work on linux, osx -------------------------------
-#------------ will put this in a module -------------------------------
+#------------ will put this in a module when I get the time -----------
 
 sub cprint
 	{
@@ -242,26 +252,24 @@ sub cprint
 sub ProperName
 	{
 		my ( $name ) = @_;
-		
-		my $namefix; #outputs the proper lab plan name
-		
-			if( $name eq "art" ) { $namefix = "Art Museum"; }
 				
-			if( $name eq "opera" ) { $namefix = "Opera House"; }
+			if( $name eq "art" ) { $name = "Art Museum"; }
 				
-			if( $name eq "parliament" ) { $namefix = "Parliament"; }
+			if( $name eq "opera" ) { $name = "Opera House"; }
+				
+			if( $name eq "parliament" ) { $name = "Parliament"; }
 			
-			if( $name eq "ibs" ) { $namefix = "Interstellar Broadcast System"; }
+			if( $name eq "ibs" ) { $name = "Interstellar Broadcast System"; }
 				
-			if( $name eq "command" ) { $namefix = "Station Command Centre"; }
+			if( $name eq "command" ) { $name = "Station Command Centre"; }
 				
-			if( $name eq "warehouse" ) { $namefix = "Warehouse"; }
+			if( $name eq "warehouse" ) { $name = "Warehouse"; }
 				
-			if( $name eq "food" ) { $namefix = "Culinary Institute"; }
+			if( $name eq "food" ) { $name = "Culinary Institute"; }
 				
-			if( $name eq "policestation" ) { $namefix = "Police Station"; }
+			if( $name eq "policestation" ) { $name = "Police Station"; }
 				
-		return $namefix;
+		return $name;
 	}
 
 #------------ Returns Lab Plan Build Names depending on plan levels ------------
@@ -335,30 +343,7 @@ LEVEL1:
 		return $lab_names;
 	}
 
-#------------ Usage Print Plans -----------------------------------------------
-#not used here yet
-	
-sub list_plans 
-	{
-    my $status = $sslab->view->{make_plan};
-    my $types  = $status->{types};
-
-    foreach my $plan ( @$types ) 
-			{
-        print "$plan->{name}\n";
-			}
-
-    if ( my $making = $status->{making} ) 
-			{
-        print <<MAKING;
-
-Already making plan:
-$making
-MAKING
-			}
-	}
-
-#------------ Seconds to string -----------------------------------------------
+#------------ Seconds to string from upgrade_al.pl --------------------------------
 
 sub sec2str 
 	{
@@ -377,9 +362,8 @@ sub sec2str
 	}
 
 #------------ Time string to seconds -----------------------------------------------
-
-#time string format 00:00:00:00
-#probably a better way to do this but this works for now
+#------------ time string format 00:00:00:00 ---------------------------------------
+#------------ probably a better way to do this but this works for now --------------
 
 sub str2sec #returns the int( seconds ) needed for the sleep part of make_plan
 	{
@@ -435,24 +419,22 @@ sub usage
 		print "\n";
 			if( !exists $opts{planet} )
 				{
-					cprint( "SS Plan Set: Planet name required!", $RED, 1, 2 );
+					cprint( "SS Plan Set error: Planet name required!", $RED, 1, 2 );
 				}
 			if( !exists $opts{level} )
 				{
-					cprint( "SS Plan Set: Level required!", $RED, 1, 2 );
+					cprint( "SS Plan Set error: Level required!", $RED, 1, 2 );
 				}
 					
 		cprint( "Usage: SS_plan_set.pl --planet NAME --level LEVEL", $GRN, 1, 2 );
-		cprint( "	--planet    REQUIRED", $MAG, 0, 1 );
-		cprint( "	--level     REQUIRED", $MAG, 0, 1 );
-		cprint( "	--tolevel   BUILD TO LEVEL (optional)", $MAG, 0, 1 );	
-		cprint( "	--nwp       NO WAREHOUSE PLAN (optional)", $MAG, 0, 1 );
-		cprint( "	--subsidize YOU CAN USE YOUR E (optional)", $MAG, 0, 1 );
-		cprint( "	--help", $MAG, 0, 2 );
+		cprint( "	--planet    REQUIRED", $MAG, 1, 1 );
+		cprint( "	--level     REQUIRED", $MAG, 1, 1 );
+		cprint( "	--tolevel   BUILD TO LEVEL (optional)", $MAG, 1, 1 );	
+		cprint( "	--nwp       NO WAREHOUSE PLAN (optional)", $MAG, 1, 1 );
+		cprint( "	--subsidize YOU CAN USE YOUR E (optional)", $MAG, 1, 1 );
+		cprint( "	--help", $MAG, 1, 2 );
 		
-		cprint( "CONFIG_FILE defaults to 'lacuna.yml'", $BLK, 1, 2 );
-		
-		#cprint( "If no options are provided, it will assume that you have no idea what this script does. See --help!", $BLK, 1, 1 );
+		cprint( "CONFIG_FILE defaults to 'lacuna.yml'", $WHT, 0, 2 );
 		
 			if ( !exists $opts{planet} )
 				{
@@ -463,14 +445,14 @@ sub usage
 					$planet = $opts{planet};
 				}
 					
-		cprint( "--planet NAME is required, it will start making that plan set on that planet!", $RED, 1, 1 );
-		cprint( "--level LEVEL is required, it will start making that plan set level!", $RED, 1, 2 );
-		cprint( "If --tolevel is provided, it will make complete plan sets from LEVEL to TOLEVEL e.g. --LEVEL 1 --TOLEVEL 4.", $BLK, 1, 1 );
-		cprint( "If --nwp is provided, it will not make a warehouse plan @ the level specified.", $BLK, 1, 2 );
-		cprint( "If --subsidize is also provided, the plan set build will be E-subsidized.", $BLK, 1, 2 );
-		cprint( "This option will chew your E's very quickly, if used, and $planet might run out of resources before the plan sets are complete! You maybe off your planet! :)", $RED, 1, 1 ); 
-		cprint( "USE WITH CAUTION AS NO REFUNDS ARE GIVEN OR WARRANTIES IMPLIED FOR THE USE OF THIS SOFTWARE. Check your stats.", $RED, 1, 2 );
-		cprint( "If --help is used, you get the same output as what you can see. It's a bit of a useless option. :)", $BLK, 1, 1 );
+		cprint( "--planet NAME is required, you need somewhere to build the plan set!", $RED, 1, 1 );
+		cprint( "--level LEVEL is required, it will make one set of plans at that level!", $RED, 1, 2 );
+		cprint( "If --tolevel is provided, it will make complete plan sets from LEVEL to TOLEVEL e.g. --LEVEL 1 --TOLEVEL 4.", $WHT, 0, 1 );
+		cprint( "If --nwp is provided, it will not make a warehouse plan @ the level specified otherwise the script will build a warehouse to each level.", $WHT, 0, 2 );
+		cprint( "If --subsidize is also provided, the plan set build will be E-subsidized.", $WHT, 0, 2 );
+		cprint( "This option will chew your E's very quickly, if multiple build levels are used, and $planet might run out of resources before the plan sets are complete! You might end up off your planet! :):", $RED, 1, 1 ); 
+		cprint( "USE WITH CAUTION AS NO REFUNDS ARE GIVEN OR WARRANTIES IMPLIED FOR THE USE OF THIS SOFTWARE. Check your planet stats before use.", $RED, 1, 2 );
+		cprint( "If --help is used, you get the same output as what you can see. It's a bit of a useless option. :)", $WHT, 0, 1 );
 		
 		exit;
 	}
