@@ -1,9 +1,9 @@
 
-#THINGS TO DO
-#1. Learn perl
-#2. Learn perl
-#3. Learn perl
-#etc
+# THINGS TO DO
+# 1. Learn perl
+# 2. Learn perl
+# 3. Learn perl
+# etc.
 
 #!/usr/bin/env perl
 
@@ -147,7 +147,15 @@ cprint( "Starting RPC: $client->{rpc_count}", $CYN, 1, 2 );
 			cprint( "Level: " . $i . " Space Station plans complete on " . $opts{planet}, $YEL, 1, 2 );
 		}
 	
-	cprint ( "Finished building SS lab plans level $opts{level} to level $tolevel!", $GRN, 1 ,2 );
+	if( $opts{level} == $tolevel )
+		{
+			cprint ( "Finished building SS lab plans level $opts{level}!", $GRN, 1 ,2 );
+		}
+	else
+		{
+			cprint ( "Finished building SS lab plans level $opts{level} to level $tolevel!", $GRN, 1 ,2 );	
+		}
+	
 	cprint( "Ending RPC: $client->{rpc_count}", $CYN, 1, 1 );
 	
 exit;
